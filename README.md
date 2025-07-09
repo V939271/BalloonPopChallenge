@@ -5,13 +5,6 @@ Test your reflexes and see how many balloons you can pop before time runs out!
 
 ---
 
-##  Screenshot
-
-![Screenshot](https://via.placeholder.com/600x300?text=Balloon+Pop+Challenge+Preview)  
-*Replace with your actual screenshot if available.*
-
----
-
 ##  Features
 
 -  Simple and intuitive gameplay  
