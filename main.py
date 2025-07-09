@@ -5,31 +5,28 @@ import sys
 # Initialize Pygame
 pygame.init()
 
-# Constants
+# Game constants
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 600
-TIMER = 120  # seconds
-BALLOON_SPEED = 1.5  # Balanced speed
+TIMER = 120  # 2 minutes
+BALLOON_SPEED = 0.3  # Slow but visible
 POP_REWARD = 2
-BALLOON_SPAWN_DELAY = 1500  # Increased delay to 1.5 seconds
+BALLOON_SPAWN_DELAY = 1000  # spawn every 1 second
 
 # Colors
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 
-# Set up screen
+# Set up display
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Balloon Pop Challenge")
 
-# Font
+# Fonts
 font = pygame.font.Font(None, 36)
 
 # Timer setup
-timer = TIMER * 1000  # milliseconds
-pygame.time.set_timer(pygame.USEREVENT, 1000)  # fire every 1 second
-
-# Clock to control FPS
-clock = pygame.time.Clock()
+timer = TIMER * 1000  # convert to milliseconds
+pygame.time.set_timer(pygame.USEREVENT, 1000)
 
 # Balloon class
 class Balloon(pygame.sprite.Sprite):
@@ -39,11 +36,13 @@ class Balloon(pygame.sprite.Sprite):
         pygame.draw.ellipse(self.image, RED, [0, 0, 50, 70])
         self.rect = self.image.get_rect()
         self.rect.x = random.randint(0, SCREEN_WIDTH - self.rect.width)
-        self.rect.y = SCREEN_HEIGHT
+        self.y = SCREEN_HEIGHT  # float for accurate movement
+        self.rect.y = int(self.y)
 
     def update(self):
-        self.rect.y -= BALLOON_SPEED
-        if self.rect.y + self.rect.height < 0:
+        self.y -= BALLOON_SPEED
+        self.rect.y = int(self.y)
+        if self.rect.y < -self.rect.height:
             self.kill()
 
 # Balloon group
@@ -52,49 +51,58 @@ balloons = pygame.sprite.Group()
 # Game variables
 score = 0
 next_balloon_spawn_time = pygame.time.get_ticks() + BALLOON_SPAWN_DELAY
-
-# Main game loop
 running = True
+
+# Game loop
 while running:
-    clock.tick(60)  # Cap the frame rate to 60 FPS
     current_time = pygame.time.get_ticks()
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
         elif event.type == pygame.USEREVENT:
             timer -= 1000
             if timer <= 0:
                 running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                for balloon in balloons:
+                    if balloon.rect.collidepoint(event.pos):
+                        balloon.kill()
+                        score += POP_REWARD
 
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            for balloon in balloons:
-                if balloon.rect.collidepoint(event.pos):
-                    balloon.kill()
-                    score += POP_REWARD
-
+    # Fill background
     screen.fill(WHITE)
 
-    # Spawn balloons
+    # Spawn balloon
     if current_time >= next_balloon_spawn_time:
-        balloon = Balloon()
-        balloons.add(balloon)
+        new_balloon = Balloon()
+        balloons.add(new_balloon)
         next_balloon_spawn_time = current_time + BALLOON_SPAWN_DELAY
 
-    # Update and draw balloons
+    # Update and draw
     balloons.update()
     balloons.draw(screen)
 
-    # Draw score
+    # Score
     score_text = font.render(f"Score: {score}", True, RED)
     screen.blit(score_text, (10, 10))
 
-    # Draw timer
+    # Timer
     timer_text = font.render(f"Time: {timer // 1000}", True, RED)
     screen.blit(timer_text, (SCREEN_WIDTH - 150, 10))
 
     pygame.display.flip()
+
+# Final score screen
+screen.fill(WHITE)
+final_text = font.render("Time's Up!", True, RED)
+score_result = font.render(f"Your Total Score: {score}", True, RED)
+screen.blit(final_text, (SCREEN_WIDTH // 2 - 80, SCREEN_HEIGHT // 2 - 40))
+screen.blit(score_result, (SCREEN_WIDTH // 2 - 130, SCREEN_HEIGHT // 2 + 10))
+pygame.display.flip()
+
+pygame.time.wait(3000)  # 3 sec pause before exit
 
 pygame.quit()
 sys.exit()
